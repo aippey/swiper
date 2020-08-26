@@ -7,72 +7,133 @@ export default class LBT extends React.Component {
     super(props);
     this.state = {
       imgposition: 1,
+      width:300,
+      height:200
     };
 
     this.lbtREF = React.createRef();
   }
 
+  componentWillMount() {
+    //由调用轮播图的组件来决定轮播图宽高
+    if(this.props.width){
+      this.setState({
+        width:this.props.width
+      })
+    }
+    if(this.props.height){
+      this.setState({
+        height:this.props.height
+      })
+    }
+  }
+
   componentDidMount() {
-    timer = setInterval(()=>{
-      this.changeImg();
-    },3000)
+    //只有图片大于1张才有轮播的必要
+    if(this.props.imgArr.length > 1){
+      timer = setInterval(()=>{
+        this.changeNextImg();
+      },3000)
+    }
   }
 
   //移动元素
   moveElement = (element,space,time=1) => {
     element.style.transform = 'translate(' + space + 'px)';
     element.style.transition = 'transform ' + time + 's';
-  }
+  };
 
-  //切换图片
-  changeImg = () => {
+  //切换下一张图片
+  changeNextImg = () => {
+    const {width} = this.state;
 
     //获取到轮播图dom元素
     const lbt = this.lbtREF.current;
-    /**
-     * 因为使用translate进行移动是相对移动，所以当我们切换图片的时候，每一张图片对应的相对位移都不一样
-     * 而每张图片的相对位移就是  （图片的宽度 * 第几张图片）
-     * this.state.imgposition：当前显示的图片是第几张
-     */
-    const position = 300 * this.state.imgposition;
-    this.moveElement(lbt,-position);
 
-    if (this.state.imgposition < this.props.imgArr.length) {//前面几张图片（排除最后也一张图片）轮播时
-      //每次切换图片后，需把state的imgposition切换成当前的图片的顺序数
+    const position = width * this.state.imgposition;
+
+    if (this.state.imgposition <= this.props.imgArr.length) {
+      this.moveElement(lbt,-position);
+
       this.setState({
         imgposition: this.state.imgposition + 1
       })
-    } else {//最后一张图片轮播的情况
+    } else {
 
-      /**
-       * 切换回第一张图
-       * 使用setTimeout是因为若不添加settimeout，页面在执行最后一张图片过渡到第一张图片的时候
-       * 不会执行最后一张图往第一张图（最后）的过渡过程，只会按往左的顺序移动过渡到第一张图，而这明显不是我们想要的结果
-       */
+      this.moveElement(lbt,0,0);
       setTimeout(() => {
-        this.moveElement(lbt,0,0);
-      }, 1000);
-      //切换为第一张图后，应把imgposition改为1（第一张图）
+        this.moveElement(lbt,-width);
+      }, 0);
       this.setState({
-        imgposition: 1
+          imgposition: 2
+      })
+
+    }
+  };
+
+  //切换上一张图片
+  changeLastImg = () =>{
+    const {width} = this.state;
+
+    //获取到轮播图dom元素
+    const lbt = this.lbtREF.current;
+
+    if(this.state.imgposition !== 1){
+      const position = width * (this.state.imgposition - 2);
+      this.moveElement(lbt,-position);
+      this.setState({
+        imgposition: this.state.imgposition - 1
+      });
+    } else {
+      const position = this.props.imgArr.length * width;
+      this.moveElement(lbt,-position,0);
+      setTimeout(() => {
+        this.moveElement(lbt,(-position + width));
+      }, 0);
+      this.setState({
+        imgposition: this.props.imgArr.length
       })
     }
   };
 
+  //下一张图片
+  nextImg = () =>{
+    clearInterval(timer);
+    this.changeNextImg();
+    timer = setInterval(()=>this.changeNextImg(),3000);
+  };
+
+  //上一张图片
+  lastImg = () =>{
+    clearInterval(timer);
+    this.changeLastImg();
+    timer = setInterval(()=>this.changeNextImg(),3000);
+  };
 
   render() {
+    const {imgArr} = this.props;
+    const {width,height} = this.state;
     return (
-        <div className={styles.lbt}>
-
+      <div>
+        <div className={styles.lbt} style={{width: `${width}px`,height: `${height}px`}}>
           <div className={styles.lbt_border} ref={this.lbtREF}>
             {
-              this.props.imgArr.map((item, index) => {
-                return <img src={item} alt="" key={index}/>
+              imgArr.map((item, index) => {
+                return <img src={item} key={index} style={{width: `${width}px`,height: `${height}px`}}/>
               })
             }
-            <img src={this.props.imgArr[0]} alt=""/>
+            <img src={imgArr[0]} style={{width: `${width}px`,height: `${height}px`}}/>
+          </div>
+
+          <div onClick={this.lastImg} className={styles.left} style={{top: `${(height-30)/2}px`}}>
+            <img src={require('./img/left.png')} alt=""/>
+          </div>
+          <div onClick={this.nextImg} className={styles.right} style={{top: `${(height-30)/2}px`}}>
+            <img src={require('./img/right.png')} alt=""/>
           </div>
         </div>
+
+      </div>
     )
   }
 }

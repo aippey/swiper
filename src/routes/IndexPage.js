@@ -10,7 +10,7 @@ function IndexPage() {
   return (
     <div className={styles.demo}>
       <div className={styles.demo_lbt}>
-        <LBT imgArr = {imgArr}></LBT>
+        <LBT imgArr = {imgArr} width={300} height={200}></LBT>
       </div>
 
     </div>
